@@ -1,0 +1,66 @@
+In this tutorial you will learn how to install and use the open-source load testing tool called k6. This free command line program allows you to conduct anywhere from basic load testing up to advanced stress tests for a website.
+
+How to Install k6 on Ubuntu/Debian
+By default, your package repository on Ubuntu won’t know where to download k6 from, so you first need to set that up.
+==========>
+sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 379CE192D401AB61
+echo "deb https://dl.bintray.com/loadimpact/deb stable main" | sudo tee -a /etc/apt/sources.list
+
+
+With that in place, you can install k6 with apt-get (after doing an update first).
+========>
+sudo apt-get update
+sudo apt-get install k6
+
+
+Simple k6 Load Testing Example
+The k6 command line load testing tool runs load tests via custom-written Javascript modules.
+==========>
+Let’s make a very basic k6 Javascript test. Create a file called script.js with the following content.
+
+import http from 'k6/http';
+import { sleep } from 'k6';
+export default function() {
+  http.get('https://127.0.0.1/');
+  sleep(1);
+}
+
+Of course, replace the IP address on line 5 with the domain or URL that you want to test.
+=========>
+Execute the script with the k6 command.
+
+k6 run script.js
+
+
+This will make one request to the URL.
+
+In order to consistently make 10 concurrent requests over the course of 30 seconds, you can pass in the –vus (virtual users) and –duration arguments as follows.
+=============>
+k6 run --vus 10 --duration 30s script.js
+
+
+More Complex k6 Example
+In order to simulate a gradual increase of traffic, we can define leg options in our Javascript file with multiple stages.
+
+
+===================>
+import http from 'k6/http';
+import { check, sleep } from 'k6';
+export let options = {
+  stages: [
+    { duration: '15s', target: 100 },
+    { duration: '30s', target: 100 },
+    { duration: '15s', target: 0 },
+  ],
+};
+export default function() {
+  let res = http.get('https://127.0.0.1/');
+  check(res, { 'status was 200': r => r.status == 200 });
+  sleep(1);
+}
+
+
+
+The above k6 example gradually build up from 0 to 100 concurrent virtual users over the course of 15 seconds. Then for the next 30 seconds, these 100 virtual users will continue to make back-to-back requests to the URL under test. Finally, the last 15 seconds will see a gradual decrease in virtual users from 100 to 0.
+
+These examples only scratch the surface with what’s possible with stress and load testing with k6. Check out the k6 JavaScript API for complete documentation, and don’t hesitate to let me know if you have any questions below.
